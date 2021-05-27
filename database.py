@@ -25,7 +25,7 @@ WITHOUT ROWID;""")
 CREATE TABLE IF NOT EXISTS supports
 (txo_hash        BLOB NOT NULL PRIMARY KEY,
  deweys          INTEGER NOT NULL,
- signing_channel BLOB REFERENCES channels (claim_hash)
+ signing_channel BLOB REFERENCES channels (claim_hash),
  boosted_deweys  REAL NOT NULL)
 WITHOUT ROWID;""")
 
