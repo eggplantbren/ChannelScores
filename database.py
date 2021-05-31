@@ -33,8 +33,8 @@ WITHOUT ROWID;""")
     db.execute("""CREATE TABLE IF NOT EXISTS supports
 (id           INTEGER NOT NULL PRIMARY KEY,
  from_channel BLOB NOT NULL REFERENCES channels (claim_hash),
- from_rating  REAL NOT NULL,
  to_channel   BLOB NOT NULL REFERENCES channels (claim_hash),
+ from_rating  REAL NOT NULL,
  deweys       INTEGER NOT NULL);""")
 
     db.execute("CREATE INDEX IF NOT EXISTS top_supporter_idx\
@@ -72,9 +72,9 @@ def add_support(from_channel, to_channel, deweys):
 
     # Add the support
     db.execute("INSERT INTO supports\
-                (from_channel, from_rating, to_channel, deweys)\
+                (from_channel, to_channel, from_rating, deweys)\
                 VALUES (?, ?, ?, ?);",
-               (from_channel, from_rating, to_channel, deweys))
+               (from_channel, to_channel, from_rating, deweys))
 
     # Update total deweys
     db.execute("UPDATE channels SET total_deweys = total_deweys + ?\
@@ -92,11 +92,25 @@ def top_supporters(to_channel):
 
 def update_ratings():
 
+    # For reading
+    db2 = conn.cursor()
+    db.execute("BEGIN;")
 
-    for row in db.execute("SELECT claim_hash, SOFTEN(SUM(from_rating*deweys))\
-                FROM channels INNER JOIN supports\
-                    ON supports.to_channel = channels.claim_hash\
-                GROUP BY claim_hash;"):
-        print(row)
+    for row in db2.execute("SELECT claim_hash FROM channels\
+                            WHERE claim_hash <> 'anon';"):
+        channel = row[0]
 
+        rating = db.execute("SELECT SOFTEN(SUM(from_rating*deweys))\
+                          FROM supports\
+                          WHERE to_channel = ?;",
+                         (channel, )).fetchone()[0]
+
+        db.execute("UPDATE channels SET rating = ? WHERE claim_hash = ?;",
+                   (rating, channel))
+
+        db.execute("UPDATE supports SET from_rating = ?\
+                    WHERE from_channel = ? AND to_channel <> from_channel;",
+                    (rating, channel))
+
+    db.execute("COMMIT;")
 
