@@ -52,7 +52,7 @@ def add_channel(claim_hash, bid_deweys):
 
     # Create the channel
     db.execute("INSERT INTO channels VALUES (?, ?, ?);",
-               (claim_hash, bid_deweys, soften(bid_deweys)))
+               (claim_hash, 0, soften(bid_deweys)))
 
     # Add the self-support
     add_support(claim_hash, claim_hash, bid_deweys)
